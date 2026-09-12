@@ -1,0 +1,38 @@
+[package]
+name = "img2ico"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+# The "image" crate can read a wide range of image formats (PNG, JPG, BMP,
+# GIF, ...) and also handles resizing with high-quality filters.
+# - default-features = false + specific "features": only enable the
+#   formats we actually need (smaller binary, shorter compile times).
+# - Version pinned to "=0.25.6": newer patch versions of "image" pull in a
+#   dependency (pxfm) that requires a newer Rust compiler (Cargo edition
+#   2024). If you later build on a machine with a current Rust toolchain
+#   (installed via rustup), you can remove the "=" and run "cargo update"
+#   to get the newest version again.
+image = { version = "=0.25.6", default-features = false, features = ["png", "jpeg", "bmp", "gif", "ico"] }
+
+# "clap" is the standard crate for command-line argument parsing in Rust.
+# The "derive" feature lets us define the arguments simply via a struct,
+# instead of parsing them by hand from std::env::args().
+# Pinned to the 4.4 line for the same reason as above.
+clap = { version = "~4.4", features = ["derive"] }
+
+# The "ico" crate can specifically build multi-resolution ICO files (a
+# single .ico can contain several sizes of the same image at once, e.g.
+# 16x16 and 256x256 together). The "image" crate alone can't do that as
+# conveniently, so we combine both: "image" for reading/resizing, "ico"
+# for finally assembling the .ico file.
+ico = "0.3"
+
+[dev-dependencies]
+# Property-based testing: instead of writing individual test cases by
+# hand, we describe a PROPERTY that should hold for every possible input
+# (e.g. "this function never panics"), and proptest generates hundreds of
+# random inputs - including edge cases a human wouldn't think to try, like
+# multi-byte Unicode strings - to try to break that property. See
+# src/main.rs's "#[cfg(test)] mod tests" for what we use this for.
+proptest = "1"

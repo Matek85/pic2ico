@@ -32,3 +32,4 @@ desktop.ini
 # Windows debug symbol files, generated alongside a build - large and
 # regenerable, not something to commit.
 *.pdb
+*.ico
