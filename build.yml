@@ -1,0 +1,98 @@
+name: Build
+
+# Runs on every push to main, on every pull request, and can also be
+# triggered manually from the GitHub UI ("Run workflow" button) via
+# workflow_dispatch.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  # Builds a native release binary on real Windows, macOS, and Linux
+  # runners - not a cross-compile from a single OS, but three genuinely
+  # separate machines, each building for itself. That's what guarantees
+  # the result actually works on each platform.
+  build:
+    name: Build (${{ matrix.os }})
+    strategy:
+      # fail-fast: false means if e.g. the Windows build fails, the macOS
+      # and Linux builds still run to completion instead of being
+      # cancelled - useful for seeing all three results at once.
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      # Caches ~/.cargo and target/ between runs, keyed by Cargo.lock.
+      # Without this, every run recompiles every dependency from scratch,
+      # which costs both time and (on a private repo) billed minutes.
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Upload binary artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: img2ico-${{ matrix.os }}
+          # Only one of these two paths will actually exist per OS -
+          # if-no-files-found: ignore stops that from being treated as an
+          # error for the other platform's job.
+          path: |
+            target/release/img2ico
+            target/release/img2ico.exe
+          if-no-files-found: ignore
+
+  # Bonus verification step: generates a real .icns file on an actual
+  # macOS runner, then decomposes it again using Apple's OWN "iconutil"
+  # tool. If Apple's own tooling can successfully unpack the file we
+  # produced, that's about as strong a real-world confirmation of the
+  # .icns format as we can get without a person physically checking it in
+  # Finder - see the img2ico README/write_icns() doc comment for the full
+  # context on why this mattered (the format was originally verified
+  # without any access to a real Mac at all).
+  verify-icns-on-macos:
+    name: Verify .icns with native macOS tools
+    needs: build
+    runs-on: macos-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build release binary
+        run: cargo build --release
+
+      - name: Generate a test .icns file
+        run: ./target/release/img2ico .github/testdata/logo.png --output-format icns -o test.icns --force
+
+      - name: Decompose the .icns with Apple's own iconutil
+        run: |
+          iconutil -c iconset test.icns -o verified.iconset
+          echo "iconutil successfully unpacked the .icns file - contents:"
+          ls -la verified.iconset
+
+      - name: Inspect with sips (macOS's built-in image tool)
+        run: sips -g all test.icns
+
+      - name: Upload the generated .icns and its decomposed iconset
+        uses: actions/upload-artifact@v4
+        with:
+          name: icns-verification
+          path: |
+            test.icns
+            verified.iconset
