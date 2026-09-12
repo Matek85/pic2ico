@@ -2,10 +2,14 @@ name: Build
 
 # Runs on every push to main, on every pull request, and can also be
 # triggered manually from the GitHub UI ("Run workflow" button) via
-# workflow_dispatch.
+# workflow_dispatch. The "tags" trigger below is what additionally kicks
+# off the release job further down: pushing a tag like "v1.2.0" builds
+# exactly the same way AND publishes a GitHub Release with the binaries
+# attached.
 on:
   push:
     branches: [main]
+    tags: ['v*.*.*']
   pull_request:
   workflow_dispatch:
 
@@ -96,3 +100,48 @@ jobs:
           path: |
             test.icns
             verified.iconset
+
+  # Only runs when the trigger was a version tag (e.g. "v1.2.0"), not on
+  # ordinary pushes to main or pull requests - see the "tags" trigger
+  # above. Publishes a proper GitHub Release with the three platform
+  # binaries attached as downloadable assets: permanent, publicly
+  # linkable, no login required, and prominently shown on the repo's main
+  # page - unlike the plain build artifacts above, which expire and
+  # require being logged in to even find.
+  release:
+    name: Publish GitHub Release
+    needs: [build, verify-icns-on-macos]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    # The default GITHUB_TOKEN is often read-only for repository contents
+    # depending on the repo's settings - creating a Release requires
+    # explicit write access, so this is spelled out rather than assumed.
+    permissions:
+      contents: write
+    steps:
+      - name: Download all three platform artifacts from the build job
+        uses: actions/download-artifact@v7
+        with:
+          pattern: img2ico-*
+          path: artifacts
+
+      # macOS and Linux both produce a binary simply named "img2ico" (no
+      # extension) - if we uploaded both as-is, they'd collide as release
+      # assets, since a Release can't have two files with the same name.
+      # Renaming each to include its platform makes them all distinct.
+      - name: Rename each binary so they don't collide as release assets
+        run: |
+          mkdir -p release
+          mv artifacts/img2ico-windows-latest/img2ico.exe release/img2ico-windows.exe
+          mv artifacts/img2ico-macos-latest/img2ico release/img2ico-macos
+          mv artifacts/img2ico-ubuntu-latest/img2ico release/img2ico-linux
+          chmod +x release/img2ico-macos release/img2ico-linux
+
+      - name: Create the GitHub Release with the binaries attached
+        uses: softprops/action-gh-release@v3
+        with:
+          files: release/*
+          # Auto-fills the release description from the commits since the
+          # previous tag, instead of requiring a hand-written changelog
+          # for every release.
+          generate_release_notes: true
