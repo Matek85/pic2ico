@@ -28,11 +28,24 @@ img2ico is pure, platform-neutral Rust — no OS-specific code or dependencies a
 
 ## Installation
 
+### Option A: Download a pre-built release (recommended for most people)
+
+Every [GitHub Release](https://github.com/Matek85/pic2ico/releases) has ready-to-run binaries attached for Windows, macOS, and Linux — no Rust toolchain, no compiling, just download and run:
+
+1. Go to the [Releases page](https://github.com/Matek85/pic2ico/releases) and open the latest one.
+2. Download the file matching your platform: `img2ico-windows.exe`, `img2ico-macos`, or `img2ico-linux`.
+3. On macOS/Linux, mark it executable once: `chmod +x img2ico-macos` (or `img2ico-linux`).
+4. Run it — see [Platform Support](#platform-support) above for the SmartScreen/Gatekeeper warning you'll likely see the first time, and [Quick Start](#quick-start) below for actual usage.
+
+These binaries are built automatically by this project's GitHub Actions workflow directly from the tagged source at release time — the same CI setup described under [A note on quality and safety](#a-note-on-quality-and-safety) below.
+
+### Option B: Build it yourself
+
 You need a working Rust toolchain (install via [rustup](https://rustup.rs) if you don't have one).
 
 ```
-git clone <this-repo>
-cd img2ico
+git clone https://github.com/Matek85/pic2ico.git
+cd pic2ico
 cargo build --release
 ```
 
@@ -527,6 +540,10 @@ img2ico logo.png --output-format icns --force
 - Every icon size this tool writes is 32-bit PNG-encoded with a full alpha channel — never the older, lower-quality BMP-with-reduced-palette format that some other tools (and older Windows conventions) fall back to.
 - Resizing is alpha-aware (premultiplied), so shrinking a transparent image doesn't leave a colored fringe around soft edges.
 - This tool has been checked with `cargo clippy` (clean), `cargo audit` (no known vulnerabilities in its dependencies at the time of writing), and includes automated property-based tests (`cargo test`) covering its input-parsing logic against malformed/adversarial input.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a version-by-version history of what changed.
 
 ## License
 
