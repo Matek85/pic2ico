@@ -1,0 +1,34 @@
+# Build artifacts - everything cargo generates when compiling
+# (target/debug, target/release, .fingerprint caches, incremental
+# compilation data, etc.). This one line covers all of it, since
+# everything cargo produces lives under this single top-level folder.
+/target
+
+# NOTE: Cargo.lock is intentionally NOT ignored. For a binary (an
+# application, like img2ico) - as opposed to a library - committing
+# Cargo.lock is the recommended practice: it pins the exact dependency
+# versions this project was built and tested against, so anyone who
+# clones the repo gets a reproducible build instead of potentially newer
+# (and untested) dependency versions.
+
+# Editor/IDE-specific folders. These hold personal editor settings, not
+# project files - everyone who clones this repo may use a different
+# editor, and their local settings shouldn't end up in version control.
+.vscode/
+.idea/
+*.iml
+.vs/
+
+# OS-generated clutter files - metadata Windows/macOS create automatically
+# in every folder, never something a repository should track.
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Rustfmt occasionally leaves a .rs.bk backup file behind when reformatting
+# fails partway through.
+*.rs.bk
+
+# Windows debug symbol files, generated alongside a build - large and
+# regenerable, not something to commit.
+*.pdb
