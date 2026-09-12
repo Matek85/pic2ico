@@ -1,3 +1,5 @@
+[![Build](https://github.com/Matek85/pic2ico/actions/workflows/main.yml/badge.svg)](https://github.com/Matek85/pic2ico/actions/workflows/main.yml)
+
 # img2ico
 
 A command-line tool that converts any image into a Windows `.ico` file (or a macOS `.icns` file), with proper transparency support, background removal, and a few extra tools for working with existing icon files.
